@@ -1,0 +1,11 @@
+import {readFileSync,writeFileSync} from 'node:fs';
+import {execFile} from 'node:child_process';
+import {promisify} from 'node:util';
+import ts from 'typescript';
+const run=promisify(execFile);
+const source=ts.transpileModule(readFileSync('lib/music-source.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+const {musicSources,parseMusicPage}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
+const tracks={};const ids=Object.keys(musicSources);
+for(let offset=0;offset<ids.length;offset+=3)await Promise.all(ids.slice(offset,offset+3).map(async id=>{try{const url=`https://i.y.qq.com/v8/playsong.html?ADTAG=ryqq.songDetail&songmid=${musicSources[id].mid}&songid=0&songtype=0`;const {stdout}=await run('curl',['--fail','--silent','--show-error','--location','--max-time','20','--user-agent','Mozilla/5.0 (Linux; Android 11) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36',url],{maxBuffer:600000});const r=parseMusicPage(stdout,id);tracks[id]={url:r.url,duration:r.duration,title:r.title};console.log(`Music connected: ${id}`);}catch{console.log(`Music temporarily unavailable: ${id}`);}}));
+writeFileSync('public/music.json',JSON.stringify({generatedAt:new Date().toISOString(),tracks}));
+console.log(`Connected ${Object.keys(tracks).length}/${ids.length} public recordings; no audio files copied.`);
