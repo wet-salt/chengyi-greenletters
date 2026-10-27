@@ -7,6 +7,26 @@ import Link from "next/link";
 import {useRouter} from "next/navigation";
 import {sitePages,pageHref,letterHref,type PageKey} from "../lib/site-navigation";
 
+
+// 官方作品页优先；尚未找到直达页的作品使用平台搜索入口。
+const watchLinks: Record<string, {platform:string; url:string; search?:boolean}> = {
+  lotus:{platform:"爱奇艺",url:"https://www.iqiyi.com/a_27r930p2tqp.html"},
+  liuli:{platform:"优酷",url:"https://search.youku.com/search_video?keyword=%E7%90%89%E7%92%83",search:true},
+  deep:{platform:"爱奇艺",url:"https://www.iqiyi.com/a_1sqlg4yh4vp.html"},
+  changan:{platform:"优酷",url:"https://v.youku.com/v_show/id_XNjUxMzU5NjI3Mg%3D%3D.html"},
+  jianxin:{platform:"爱奇艺",url:"https://www.iqiyi.com/a_25ki16459u9.html"},
+  "shan-hai":{platform:"爱奇艺",url:"https://www.iqiyi.com/a_1myubxject9.html"},
+  southwind:{platform:"优酷",url:"https://so.youku.com/search/q_%E5%8D%97%E9%A3%8E%E7%9F%A5%E6%88%91%E6%84%8F",search:true},
+  bottomline:{platform:"芒果TV",url:"https://www.mgtv.com/h/470685.html"},
+  immortal:{platform:"优酷",url:"https://v.youku.com/v_show/id_XNTg4MTE2ODQ4MA%3D%3D.html"},
+  shanhe:{platform:"优酷",url:"https://so.youku.com/search/q_%E5%B1%B1%E6%B2%B3%E6%9C%88%E6%98%8E",search:true},
+  jun:{platform:"芒果TV",url:"https://www.mgtv.com/h/348552.html"},
+  nuha:{platform:"腾讯视频",url:"https://v.qq.com/x/search/?q=%E6%80%92%E6%B5%B7%E6%BD%9C%E6%B2%99",search:true},
+  "qingyun-work":{platform:"腾讯视频",url:"https://v.qq.com/x/search/?q=%E9%9D%92%E4%BA%91%E5%BF%97",search:true},
+  "gui-ai":{platform:"搜狐视频",url:"https://tv.sohu.com/item/MjE0MTMx.html"},
+  savior:{platform:"优酷",url:"https://so.youku.com/search/q_%E4%B8%8D%E5%8F%AF%E6%80%9D%E5%BC%82",search:true},
+};
+
 const empty=localSnapshot();
 const allArchive=[...milestones,...works,...appearances,...encounters];
 const tabs=["成长年表","影视作品","综艺出演","品牌活动","舞台盛典"];
@@ -135,7 +155,7 @@ export default function SitePage({section}:{section:PageKey}){
     </main>
     <div className="scroll-control"><button className={auto?"auto-toggle running":"auto-toggle"} aria-pressed={auto} onClick={()=>{if(progress>=99){window.scrollTo({top:0,behavior:"instant"});}setAuto(!auto);}} aria-label={auto?"暂停自动滚动":"开始自动滚动"}>{auto?<Pause size={15}/>:<Play size={15}/>}<span>{auto?"暂停":"自动漫游"}</span></button><select aria-label="自动滚动速度" value={speed} onChange={e=>setSpeed(Number(e.target.value))}><option value={14}>慢速</option><option value={24}>舒缓</option><option value={42}>快速</option></select><button className="icon-btn" onClick={()=>go("home")} aria-label="回到顶部"><ArrowUp size={15}/></button></div>
     {toast&&<div role="status" className="toast"><Leaf size={16}/>{toast}<button className="icon-btn" aria-label="关闭提示" onClick={()=>setToast("")}><X size={14}/></button></div>}
-    <dialog ref={dialogRef} className="detail-dialog" onCancel={()=>setDetail(null)} onClick={e=>{if(e.target===e.currentTarget)setDetail(null);}} onClose={()=>{setDetail(null);lastFocus.current?.focus();}} aria-labelledby="detail-title">{detail&&<div className="detail-content"><button className="close-dialog icon-btn" onClick={()=>setDetail(null)} aria-label="关闭详情"><X size={21}/></button>{detail.image&&<img className="detail-photo" src={detail.image} alt={`${detail.title}宣传图`}/>}<div className="detail-body"><span className="eyebrow">{detail.category} / {detail.date}</span><h2 id="detail-title">{detail.title}</h2>{detail.role&&<div className="detail-role">{detail.role}</div>}<p>{detail.detail}</p><div className="detail-buttons"><a className="primary-btn" href={detail.source} target="_blank" rel="noreferrer">查看资料来源 <ArrowUpRight size={16}/></a><button className="outline-btn" aria-pressed={isSaved(`archive:${detail.id}`)} disabled={!!pending} onClick={()=>void act("save",{targetId:`archive:${detail.id}`,active:!isSaved(`archive:${detail.id}`)},isSaved(`archive:${detail.id}`)?"已取消收藏。":"这一步，已被你收藏。")}><Bookmark size={16} fill={isSaved(`archive:${detail.id}`)?"currentColor":"none"}/>{isSaved(`archive:${detail.id}`)?"已收藏":"收藏这一步"}</button></div><small className="detail-source">资料 / {detail.sourceName}{detail.imageSource&&<> · <a href={detail.imageSource} target="_blank" rel="noreferrer">图片出处</a></>}</small></div></div>}</dialog>
+    <dialog ref={dialogRef} className="detail-dialog" onCancel={()=>setDetail(null)} onClick={e=>{if(e.target===e.currentTarget)setDetail(null);}} onClose={()=>{setDetail(null);lastFocus.current?.focus();}} aria-labelledby="detail-title">{detail&&<div className="detail-content"><button className="close-dialog icon-btn" onClick={()=>setDetail(null)} aria-label="关闭详情"><X size={21}/></button>{detail.image&&<img className="detail-photo" src={detail.image} alt={`${detail.title}宣传图`}/>}<div className="detail-body"><span className="eyebrow">{detail.category} / {detail.date}</span><h2 id="detail-title">{detail.title}</h2>{detail.role&&<div className="detail-role">{detail.role}</div>}<p>{detail.detail}</p><div className="detail-buttons">{works.includes(detail)&&watchLinks[detail.id]&&<a className="primary-btn" href={watchLinks[detail.id].url} target="_blank" rel="noopener noreferrer">{watchLinks[detail.id].search?`在${watchLinks[detail.id].platform}搜索`:`去${watchLinks[detail.id].platform}观看`} <ArrowUpRight size={16}/></a>}<a className="primary-btn" href={detail.source} target="_blank" rel="noreferrer">查看资料来源 <ArrowUpRight size={16}/></a><button className="outline-btn" aria-pressed={isSaved(`archive:${detail.id}`)} disabled={!!pending} onClick={()=>void act("save",{targetId:`archive:${detail.id}`,active:!isSaved(`archive:${detail.id}`)},isSaved(`archive:${detail.id}`)?"已取消收藏。":"这一步，已被你收藏。")}><Bookmark size={16} fill={isSaved(`archive:${detail.id}`)?"currentColor":"none"}/>{isSaved(`archive:${detail.id}`)?"已收藏":"收藏这一步"}</button></div>{works.includes(detail)&&watchLinks[detail.id]&&<small className="detail-source">手机可在平台页面选择打开 App；播放权限及可用地区以平台为准。</small>}<small className="detail-source">资料 / {detail.sourceName}{detail.imageSource&&<> · <a href={detail.imageSource} target="_blank" rel="noreferrer">图片出处</a></>}</small></div></div>}</dialog>
     {noteOpen&&<SmallLetter onClose={()=>setNoteOpen(false)}/> }
     {favoritesOpen&&<Favorites items={uniqueSavedArchive} onClose={()=>setFavoritesOpen(false)} onOpen={openDetail} onLetters={()=>{setFavoritesOpen(false);setFeedTab("我的收藏");setTopicFilter("全部话题");if(section==="community")go("community");else router.push("/community?feed=saved");}}/>}
   </>;
